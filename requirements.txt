@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+pydantic
+pymilvus
+requests
+nltk
+pdfplumber
+python-dotenv
+tqdm

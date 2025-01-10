@@ -1,0 +1,61 @@
+version: '3.8'
+
+services:
+  milvus-standalone:
+    image: milvusdb/milvus:v2.5.2
+    container_name: milvus-standalone
+    environment:
+      - ETCD_USE_EMBED=true
+      - ETCD_DATA_DIR=/var/lib/milvus/etcd
+      - ETCD_CONFIG_PATH=/milvus/configs/embedEtcd.yaml
+      - COMMON_STORAGETYPE=local
+    volumes:
+      - ./volumes/milvus:/var/lib/milvus
+      - ./embedEtcd.yaml:/milvus/configs/embedEtcd.yaml
+      - ./user.yaml:/milvus/configs/user.yaml
+    ports:
+      - "19530:19530"
+      - "9091:9091"
+      - "2379:2379"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9091/healthz"]
+      interval: 30s
+      start_period: 90s
+      timeout: 20s
+      retries: 3
+    command: milvus run standalone
+    networks:
+      - network
+
+  ollama:
+    image: ollama/ollama
+    container_name: ollama
+    networks:
+      - network
+    ports:
+      - "11434:11434"
+    entrypoint: |
+      /bin/sh -c "
+        ollama serve & \
+        sleep 10 && \
+        ollama pull all-minilm && \
+        ollama pull mistral:7b && \
+        wait"
+
+  api:
+    image: api:7
+    container_name: api
+    environment:
+      - APP_MODULE=main:app
+    ports:
+      - "8000:8000"
+    entrypoint: /bin/sh -c "sleep 90 && exec uvicorn main:app --host 0.0.0.0 --port 8000 --reload"
+    depends_on:
+      - ollama
+      - milvus-standalone
+    networks:
+      - network
+
+networks:
+  network:
+    driver: bridge
