@@ -47,3 +47,24 @@ curl -X POST "$URL" \
     -H "Content-Type: application/json" \
     -d "{\"question\": \"$QUESTION\"}"
 ```
+
+### Improving Performance
+The model running through ollama is `mistral:7b`. By default, this is setup for compatibility and to be lightweight. If you are running this with more powerful compute you can change the `docker-compose.yml` file to change the models that ollama pulls on runtime. If you have a GPU available if should attempt to use this by default but this does not happen, you can also explicitly call that out in the compose file as well. Specifically, you will need to make modifications here:
+```
+ollama:
+    image: ollama/ollama
+    container_name: ollama
+    ports:
+      - "11434:11434"
+    labels:
+      - "rag.ollama"
+    entrypoint: |
+      /bin/sh -c "
+        ollama serve & \
+        sleep 10 && \
+        ollama pull all-minilm && \ # Embedding model
+        ollama pull mistral:7b && \ # Query model
+        wait"
+```
+
+For more information on how to change around the run commands and other endpoints for scability, check out the official documentation ![here](https://github.com/ollama/ollama/blob/main/docs/docker.md).
