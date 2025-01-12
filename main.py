@@ -229,6 +229,13 @@ def generate(query: str):
         logger.error(f"Error from Ollama generate service ({response.status_code}): {response.text}")
         return f"Error ({response.status_code}): {response.text}"
 
+@app.get("/health")
+async def health_check():
+    return {
+        "status_code": 200,
+        "message": "healthy"
+    }
+
 @app.post("/question")
 async def question(request: QuestionRequest):
     # Step 1: Generate embedding for the question
